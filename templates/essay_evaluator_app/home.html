@@ -96,7 +96,7 @@
         </div>
 
         <div class = "history-container">
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and past_seaarches %}
                 <br>
                 <h2><b> History: </b></h2>
                 <ul class="list-unstyled history_list">
@@ -117,6 +117,7 @@
                     {% endfor %}
                 </ul>
             {% endif %}
+
         </div>
 
         <script>
