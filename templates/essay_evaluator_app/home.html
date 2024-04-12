@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Essay Evaluator</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+        <style>
+            body {
+                font-family: Arial;
+                padding-left: 10%;
+                padding-right: 10%;
+            }
+            
+            input[type=text]{
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                display: block;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            #content{
+                width: 100%;
+                padding: 12px 20px;
+                margin: 8px 0;
+                display: block;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+
+            .custom-card {
+                background-color: #5DADE2;
+                color: white;
+            }
+            
+            input[type=submit] {
+                width: 100%;
+                background-color: #34495E;
+                color: white;
+                padding: 14px 20px;
+                margin: 8px 0;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            
+            input[type=submit]:hover {
+                background-color: #45a049;    
+            }
+            
+            div.container {
+                width: 110%;
+                border-radius: 5px;
+                background-color: #f2f2f2;
+                padding: 20px;
+                margin-top: 10px;
+            }
+
+            div.feedback-container {
+                border-radius: 5px;
+                background-color: #f2f2f2;
+                padding: 20px;
+            } 
+        </style>
+    </head>
+    <body>
+        <div class="card bg-primary text-white" style="margin-top: 10px;">
+            <div class="card-body"><h1 style="text-align: center;">Essay Evaluator</h1></div>
+        </div>
+        {% if user.is_authenticated %}
+            <div class="card-header" style="background-color: #f2f2f2; overflow: hidden;"><b>Welcome, {{user.first_name}}</b><a href="logout/" style="float: right;">Logout</a></div>
+        {% else %}
+            <div class="card-header" style="background-color: #f2f2f2; overflow: hidden;"><a href="login/" style="float: right;">Login</a></div>
+        {% endif %}
+        <br>
+        <b>Receive instant feedback on your essays' quality, spelling accuracy, and content relevance, empowering you to refine your writing skills effortlessly</b>
+        <div class="container">
+            <form method = "post" class ="inputform">
+                {%csrf_token%}
+                <label><b>Enter the Essay Topic:</b></label>
+                <input type="text" name="topic" class ="topic" placeholder="Enter Topic.." required>
+
+                <label><b>Enter your Essay:</b></label>
+                <textarea id = "content" name="content" class="content" placeholder="Enter Essay.." required></textarea>
+
+                <input type="submit" value="Submit">
+            </form>
+
+            <p class = 'output_list'></p>
+            <button type="button" class="btn btn-secondary" id="clearButton" style="display: none;">Clear</button>
+        
+        </div>
+
+        <div class = "history-container">
+            {% if user.is_authenticated %}
+                <br>
+                <h2><b> History: </b></h2>
+                <ul class="list-unstyled history_list">
+                    {% for feedback in past_searches %}
+                        {% if request.user == feedback.user %}
+                            <li>
+                                <div class = "feedback-container">
+                                    <label for="feedback-title"> <b>Title:</b> {{feedback.title}}</label><br>
+                                    <label for="feedback-content"><b>Content: </b>{{feedback.content}}</label><br>
+                                    <label for="feedback-spelling_errors"><b>Total Spelling Errors: </b>{{feedback.spelling_errors}}</label><br>
+                                    <label for="feedback-relevant-content"> <b>Content Related to title: </b>{{feedback.relevant_content}}</label><br>
+                                    <label for="feedback-score"><b>Rating out of 10:</b> {{feedback.score}}</label><br>
+                                    <label for="feedback-time"><b>Time: </b>{{feedback.time}}</label><br>
+                                </div>
+                                <div><br></div> 
+                            </li>
+                        {% endif %}
+                {% endfor %}
+            {% endif %}
+            </ul>
+        </div>
+
+        <script>
+            const essaytopic = document.querySelector('.topic');
+            const essaycontent = document.querySelector('.content');
+            const essayinputform = document.querySelector('.inputform');
+            const essayoutput = document.querySelector('.output_list');
+
+            essayinputform.addEventListener('submit', (event) => {
+                event.preventDefault();
+                
+                const topicinput = essaytopic.value.trim();
+                const contentinput = essaycontent.value.trim();
+                const contentinputlength = contentinput.split(" ").length;
+
+                if(contentinputlength > 500){
+                    alert("Essay Content should be up to 500 words.");
+                    return;
+                }
+
+                fetch('',{
+                    method : 'POST',
+                    headers : {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body : new URLSearchParams({
+                        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'topicinput': topicinput,
+                        'contentinput': contentinput
+                    })
+                })
+
+                .then(response => response.json())
+                .then(data => {
+                    const spelling_errors = data.spelling_errors;
+                    const content_relevance = data.content_relevance;
+                    const rating = data.rating;
+                    
+                    essayoutput.innerHTML = `<b> Total Spelling Errors:</b> ${spelling_errors} <br> <b>Is the Content of Essay is related to title:</b> ${content_relevance} <br> <b> Score out of 10: </b> ${rating} <br>`;
+                    document.getElementById("clearButton").style.display = "inline-block";
+                })
+                
+            });
+
+            document.getElementById("clearButton").addEventListener("click", function() {
+                location.reload();
+                essaytopic.value = '';
+                essaycontent.value = '';
+                essayoutput.innerHTML= '';
+                document.getElementById("clearButton").style.display = "none";
+            });
+        </script>
+
+    </body>
+</html>
