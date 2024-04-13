@@ -6,7 +6,9 @@ from django.contrib.auth.models import User
 from django.contrib.auth import logout
 from .models import EssayTable
 from django.utils import timezone
-import os
+import os 
+import psycopg2
+
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
@@ -49,6 +51,7 @@ def rating_response(topicinput, contentinput):
 
 def home(request):
     if request.user.is_authenticated:
+        
         past_searches = EssayTable.objects.filter(user = request.user).order_by('-time')
     
     if request.method == 'POST':
